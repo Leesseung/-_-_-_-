@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>생산계획 AI 접목 로드맵</title>
+  <style>
+    :root {
+      --black: #111;
+      --g90: #1d1d1f;
+      --g70: #3a3a3c;
+      --g50: #6e6e73;
+      --g30: #aeaeb2;
+      --g15: #d1d1d6;
+      --g06: #f2f2f7;
+      --g03: #f9f9fb;
+      --white: #fff;
+      --line: #e5e5ea;
+      --r: 12px;
+      --rs: 8px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{
+      font-family:-apple-system,'Apple SD Gothic Neo','Malgun Gothic',BlinkMacSystemFont,sans-serif;
+      background:var(--g06);color:var(--g90);line-height:1.6;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    /* ── Sticky Nav ── */
+    #stickyNav{
+      position:sticky;top:0;z-index:100;
+      background:rgba(255,255,255,0.92);
+      backdrop-filter:blur(12px);
+      border-bottom:1px solid var(--line);
+      padding:0 32px;
+    }
+    .sn-inner{
+      max-width:1040px;margin:0 auto;
+      display:flex;align-items:center;gap:0;height:52px;
+    }
+    .sn-back{
+      font-size:12px;font-weight:600;color:var(--g50);
+      text-decoration:none;margin-right:24px;flex-shrink:0;
+      transition:color .2s;
+    }
+    .sn-back:hover{color:var(--g90);}
+    .sn-phases{display:flex;gap:4px;overflow-x:auto;}
+    .sn-phase{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:5px 13px;border-radius:20px;
+      font-size:12px;font-weight:600;color:var(--g50);
+      text-decoration:none;white-space:nowrap;
+      border:1px solid transparent;
+      transition:all .2s;
+    }
+    .sn-phase:hover{background:var(--g06);color:var(--g90);}
+    .sn-phase.active{background:var(--g90);color:var(--white);border-color:var(--g90);}
+    .sn-dot{
+      width:7px;height:7px;border-radius:50%;
+      background:currentColor;opacity:.5;
+    }
+    .sn-phase.active .sn-dot{opacity:1;}
+
+    /* ── Cover ── */
+    .cover{
+      background:var(--black);color:var(--white);
+      padding:80px 60px 72px;text-align:center;
+    }
+    .cover-eyebrow{
+      display:inline-block;font-size:11px;font-weight:600;
+      letter-spacing:2px;text-transform:uppercase;color:var(--g50);margin-bottom:24px;
+    }
+    .cover h1{
+      font-size:46px;font-weight:700;line-height:1.1;
+      letter-spacing:-1.5px;margin-bottom:16px;
+    }
+    .cover h1 em{font-style:normal;color:var(--g50);}
+    .cover-sub{font-size:17px;color:var(--g50);margin-bottom:48px;}
+    .cover-stats{
+      display:inline-flex;border:1px solid #2c2c2e;
+      border-radius:14px;overflow:hidden;
+    }
+    .cs{padding:18px 32px;border-right:1px solid #2c2c2e;text-align:center;}
+    .cs:last-child{border-right:none;}
+    .cs .n{font-size:26px;font-weight:700;color:var(--white);letter-spacing:-1px;display:block;}
+    .cs .l{font-size:11px;color:var(--g50);display:block;margin-top:2px;}
+
+    /* ── Page wrapper ── */
+    .page{max-width:1040px;margin:0 auto;padding:72px 28px;}
+
+    /* ── Section header ── */
+    .sec-header{margin-bottom:40px;}
+    .sec-eyebrow{
+      font-size:11px;font-weight:700;letter-spacing:1.5px;
+      text-transform:uppercase;color:var(--g30);margin-bottom:8px;
+    }
+    .sec-header h2{
+      font-size:30px;font-weight:700;letter-spacing:-0.6px;
+      color:var(--g90);line-height:1.2;margin-bottom:8px;
+    }
+    .sec-header p{font-size:15px;color:var(--g50);}
+
+    /* ── Divider ── */
+    .divider{border:none;border-top:1px solid var(--line);}
+
+    /* ── Card ── */
+    .card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);}
+    .cp{padding:28px 32px;}
+    .cp-sm{padding:20px 24px;}
+
+    /* ── Timeline (interactive) ── */
+    .timeline-grid{display:flex;flex-direction:column;gap:0;}
+    .tl-phase{
+      display:grid;grid-template-columns:130px 1fr;
+      border-bottom:1px solid var(--line);
+    }
+    .tl-phase:last-child{border-bottom:none;}
+    .tl-week{
+      padding:20px 16px;border-right:1px solid var(--line);
+      font-size:12px;font-weight:700;color:var(--g70);
+      letter-spacing:0.3px;
+      display:flex;flex-direction:column;justify-content:center;gap:4px;
+    }
+    .tl-week .wlabel{font-size:10px;color:var(--g30);letter-spacing:0;}
+    .tl-week .wdate{font-size:11px;font-weight:600;color:var(--g50);}
+    .tl-body{padding:16px 24px;}
+    .tl-phase-title{
+      font-size:14px;font-weight:700;color:var(--g90);margin-bottom:8px;
+    }
+    .tl-tasks{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+    .tl-tag{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:5px 13px;border-radius:20px;
+      font-size:12px;font-weight:600;
+      background:var(--g03);border:1px solid var(--line);color:var(--g70);
+      text-decoration:none;cursor:pointer;transition:all .15s;
+    }
+    .tl-tag:hover{background:var(--g90);color:var(--white);border-color:var(--g90);}
+    .tl-tag .tl-dot{width:6px;height:6px;border-radius:50%;background:var(--g15);}
+    .tl-tag:hover .tl-dot{background:var(--white);}
+    .tl-milestone{
+      display:inline-flex;align-items:center;gap:6px;
+      font-size:11px;font-weight:700;color:var(--g50);
+    }
+    .ms-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      width:22px;height:22px;border-radius:50%;
+      background:var(--g90);color:var(--white);font-size:9px;font-weight:700;
+    }
+    .tl-bar-row{display:flex;align-items:center;gap:8px;margin-top:10px;}
+    .tl-bar{
+      height:6px;border-radius:3px;background:var(--g15);flex:1;
+    }
+    .tl-bar-fill{height:100%;border-radius:3px;background:var(--g70);}
+
+    /* ── AI 전략 ── */
+    .ai-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+    .ai-card{
+      background:var(--white);border:1px solid var(--line);
+      border-radius:var(--r);padding:24px;
+    }
+    .ai-card .ac-label{
+      font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+      color:var(--g30);margin-bottom:8px;
+    }
+    .ai-card .ac-title{
+      font-size:15px;font-weight:700;color:var(--g90);margin-bottom:10px;
+    }
+    .ai-card .ac-desc{font-size:13px;color:var(--g50);line-height:1.7;margin-bottom:14px;}
+    .ai-card .ac-use{
+      font-size:12px;color:var(--g70);
+      background:var(--g03);border-radius:var(--rs);padding:11px 13px;
+      line-height:1.7;
+    }
+    .ai-card .ac-use strong{color:var(--g50);font-size:11px;display:block;margin-bottom:3px;}
+
+    /* ── Info grid ── */
+    .ig2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .ig3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+
+    /* ── Info box ── */
+    .ibox{
+      background:var(--g03);border:1px solid var(--line);
+      border-radius:var(--rs);padding:22px;
+    }
+    .ibox.white{background:var(--white);}
+    .ibox-title{
+      font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+      color:var(--g50);margin-bottom:14px;
+    }
+    .ibox ul{list-style:none;}
+    .ibox ul li{
+      font-size:13px;color:var(--g70);padding:7px 0;
+      border-bottom:1px solid var(--line);
+      display:flex;gap:10px;line-height:1.5;
+    }
+    .ibox ul li:last-child{border-bottom:none;}
+    .ibox ul li::before{content:'—';color:var(--g15);flex-shrink:0;}
+
+    /* ── Step row ── */
+    .step-row{display:flex;align-items:center;gap:0;overflow-x:auto;padding-bottom:4px;margin-bottom:28px;}
+    .step-node{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+    .step-circ{
+      width:34px;height:34px;border-radius:50%;
+      background:var(--g90);color:var(--white);
+      font-size:12px;font-weight:700;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .step-lbl{font-size:11px;font-weight:600;color:var(--g50);text-align:center;max-width:80px;line-height:1.4;}
+    .step-conn{width:44px;height:1px;background:var(--g15);flex-shrink:0;margin-bottom:20px;}
+
+    /* ── Table ── */
+    .dt{width:100%;border-collapse:collapse;font-size:13px;}
+    .dt th{
+      background:var(--g03);color:var(--g50);
+      font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+      padding:11px 14px;border-bottom:1px solid var(--line);text-align:left;
+    }
+    .dt td{padding:12px 14px;border-bottom:1px solid var(--line);color:var(--g70);vertical-align:top;line-height:1.6;}
+    .dt tr:last-child td{border-bottom:none;}
+    .dt tr:hover td{background:var(--g03);}
+    .tag{display:inline-block;padding:2px 9px;border-radius:4px;font-size:11px;font-weight:600;}
+    .tag-dk{background:var(--g90);color:var(--white);}
+    .tag-md{background:var(--g15);color:var(--g70);}
+
+    /* ── DB Schema ── */
+    .db-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;}
+    .db-table{
+      background:var(--white);border:1px solid var(--line);
+      border-radius:var(--r);overflow:hidden;font-size:12px;
+    }
+    .db-head{
+      background:var(--g90);color:var(--white);
+      padding:12px 16px;font-size:13px;font-weight:700;
+    }
+    .db-head small{font-size:10px;font-weight:400;color:var(--g50);margin-left:8px;}
+    .db-body{padding:4px 0;}
+    .db-row{
+      display:flex;align-items:center;gap:0;
+      padding:9px 16px;border-bottom:1px solid var(--line);
+    }
+    .db-row:last-child{border-bottom:none;}
+    .db-row:hover{background:var(--g03);}
+    .db-key{
+      width:20px;flex-shrink:0;font-size:11px;font-weight:700;
+      color:var(--g30);text-align:center;
+    }
+    .db-key.pk{color:var(--g90);}
+    .db-key.fk{color:var(--g50);}
+    .db-fname{flex:1;font-weight:600;color:var(--g90);}
+    .db-ftype{font-size:11px;color:var(--g30);min-width:80px;}
+    .db-fdesc{font-size:11px;color:var(--g50);flex:1;text-align:right;}
+    .db-rel{
+      background:var(--g03);border-radius:var(--rs);
+      padding:10px 14px;margin:12px 16px;
+      font-size:11px;color:var(--g50);line-height:1.7;
+    }
+    .db-rel strong{color:var(--g70);}
+
+    /* ── Prompt ── */
+    .prompt-wrap{
+      background:#0d1117;border-radius:var(--r);
+      padding:36px 40px;position:relative;overflow:hidden;
+      border:1px solid #30363d;
+    }
+    .prompt-wrap pre{
+      font-family:'SF Mono','Fira Code','Courier New',monospace;
+      font-size:13px;line-height:2;
+      color:#c9d1d9;white-space:pre-wrap;word-break:break-word;
+    }
+    .pl{color:#6e7681;}
+    .pk{color:#e2e8f0;}
+    .pv{color:#ffffff;font-weight:600;}
+    .pc{color:#6e7681;}
+    .pp{color:#b0bac5;}
+    .ph{color:#6e7681;font-size:11px;}
+    .phl{color:#79c0ff;font-weight:700;}
+    .pn{color:#ffa657;font-weight:600;}
+    .prompt-label{
+      position:absolute;top:14px;right:20px;
+      font-size:10px;letter-spacing:2px;color:#444;text-transform:uppercase;
+      font-family:'SF Mono',monospace;
+    }
+
+    /* ── Var card ── */
+    .var-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+    .var-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:26px;}
+    .var-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line);}
+    .var-num{
+      width:26px;height:26px;border-radius:50%;
+      background:var(--g90);color:var(--white);
+      font-size:11px;font-weight:700;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
+    .var-head h3{font-size:15px;font-weight:700;color:var(--g90);}
+    .var-def{
+      background:var(--g03);border-radius:var(--rs);padding:13px 15px;
+      font-size:13px;color:var(--g70);line-height:1.7;margin-bottom:12px;
+    }
+    .var-def strong{color:var(--g90);}
+    .note{
+      background:var(--g03);border:1px solid var(--line);border-radius:var(--rs);
+      padding:13px 15px;margin-top:12px;font-size:12px;color:var(--g50);line-height:1.7;
+    }
+    .note strong{color:var(--g70);display:block;margin-bottom:4px;font-size:12px;}
+
+    /* ── KPI ── */
+    .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+    .kpi-card{
+      background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:24px;
+    }
+    .kpi-card .kpi-n{font-size:32px;font-weight:700;color:var(--g90);letter-spacing:-1px;}
+    .kpi-card .kpi-t{font-size:13px;font-weight:600;color:var(--g70);margin-top:4px;margin-bottom:8px;}
+    .kpi-card .kpi-d{font-size:12px;color:var(--g50);line-height:1.6;}
+    .kpi-bar-wrap{margin-top:12px;}
+    .kpi-bar-bg{height:4px;background:var(--g06);border-radius:2px;}
+    .kpi-bar-fg{height:4px;border-radius:2px;background:var(--g90);}
+
+    /* ── Action ── */
+    .action-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+    .action-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:28px;}
+    .action-title{font-size:13px;font-weight:700;color:var(--g90);margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--line);}
+    .action-item{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line);font-size:13px;color:var(--g70);line-height:1.6;}
+    .action-item:last-child{border-bottom:none;}
+    .atag{padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700;flex-shrink:0;margin-top:2px;}
+    .atag.p1{background:var(--g90);color:var(--white);}
+    .atag.p2{background:var(--g50);color:var(--white);}
+    .atag.p3{background:var(--g15);color:var(--g70);}
+
+    /* ── Checklist ── */
+    .check-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+    .check-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:22px;}
+    .check-title{font-size:13px;font-weight:700;color:var(--g90);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--line);}
+    .chk{display:flex;align-items:flex-start;gap:11px;padding:8px 0;font-size:12.5px;color:var(--g70);border-bottom:1px solid var(--line);line-height:1.5;}
+    .chk:last-child{border-bottom:none;}
+    .chk-box{width:17px;height:17px;border-radius:4px;border:1.5px solid var(--g15);flex-shrink:0;margin-top:1px;}
+
+    /* ── Banner ── */
+    .banner{background:var(--g90);border-radius:var(--r);padding:44px 40px;text-align:center;margin-top:24px;}
+    .banner .ban-label{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--g50);margin-bottom:14px;}
+    .banner h3{font-size:22px;font-weight:700;color:var(--white);line-height:1.4;letter-spacing:-0.5px;margin-bottom:14px;}
+    .banner p{font-size:14px;color:var(--g50);line-height:1.8;max-width:580px;margin:0 auto;}
+
+    /* ── Full card ── */
+    .fc{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:32px;}
+    .fc-sm{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:22px;}
+
+    /* ── Flow ── */
+    .flow-inputs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px;}
+    .fi{background:var(--g03);border:1px solid var(--line);border-radius:var(--rs);padding:16px;text-align:center;}
+    .fi .icon{font-size:18px;margin-bottom:8px;}
+    .fi .name{font-size:13px;font-weight:600;color:var(--g70);}
+    .fi .sub{font-size:11px;color:var(--g30);margin-top:3px;}
+    .flow-step{border:1px solid var(--line);border-radius:var(--r);padding:18px 24px;background:var(--white);}
+    .flow-step.dark{background:var(--g90);border-color:var(--g90);}
+    .fs-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g30);margin-bottom:4px;}
+    .flow-step.dark .fs-label{color:var(--g50);}
+    .fs-title{font-size:15px;font-weight:700;color:var(--g90);}
+    .flow-step.dark .fs-title{color:var(--white);}
+    .fs-sub{font-size:12px;color:var(--g50);margin-top:3px;}
+    .flow-step.dark .fs-sub{color:var(--g30);}
+    .flow-two{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;}
+    .farr{display:flex;align-items:center;}
+    .farr .fl{width:24px;height:1px;background:var(--g15);}
+    .farr .ft{width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:6px solid var(--g15);}
+    .farr-d{display:flex;flex-direction:column;align-items:center;margin:4px 0;}
+    .farr-d .fl{width:1px;height:20px;background:var(--g15);}
+    .farr-d .ft{width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid var(--g15);}
+    .flow-four{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+    .f4{background:var(--g03);border:1px solid var(--line);border-radius:var(--rs);padding:14px;text-align:center;font-size:13px;font-weight:600;color:var(--g70);}
+
+    /* ── 6 auto steps ── */
+    .auto6{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:24px;}
+    .a6{background:var(--white);padding:22px 14px;text-align:center;}
+    .a6n{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--g30);text-transform:uppercase;margin-bottom:8px;}
+    .a6t{font-size:13px;font-weight:700;color:var(--g90);margin-bottom:10px;line-height:1.3;}
+    .a6 ul{list-style:none;text-align:left;}
+    .a6 ul li{font-size:11px;color:var(--g50);padding:3px 0;border-bottom:1px solid var(--line);line-height:1.5;}
+    .a6 ul li:last-child{border-bottom:none;}
+
+    /* ── Spacers ── */
+    .mt8{margin-top:8px;}.mt16{margin-top:16px;}.mt24{margin-top:24px;}.mt32{margin-top:32px;}
+    .mb16{margin-bottom:16px;}.mb24{margin-bottom:24px;}.mb32{margin-bottom:32px;}
+
+    /* ── Footer ── */
+    footer{background:var(--black);color:var(--g50);text-align:center;padding:28px;font-size:12px;line-height:1.8;}
+    footer strong{color:var(--g30);}
+
+    /* ── Line card (4공정) ── */
+    .lc4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;}
+    .lcard{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:24px 20px;}
+    .lcard-icon{font-size:22px;margin-bottom:12px;}
+    .lcard-title{font-size:14px;font-weight:700;color:var(--g90);margin-bottom:12px;}
+    .lcard ul{list-style:none;}
+    .lcard ul li{font-size:12px;color:var(--g50);padding:5px 0;border-bottom:1px solid var(--line);line-height:1.5;}
+    .lcard ul li:last-child{border-bottom:none;}
+    .lcard-ai{margin-top:12px;background:var(--g03);border-radius:var(--rs);padding:10px 12px;font-size:11px;color:var(--g50);line-height:1.6;}
+    .lcard-ai strong{color:var(--g70);display:block;font-size:11px;margin-bottom:3px;}
+    .lc3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;}
+
+    /* ── 수삽 상세 공정 플로우 ── */
+    .sj-flow{display:flex;align-items:stretch;gap:0;margin-bottom:24px;overflow-x:auto;}
+    .sj-step{
+      flex:1;min-width:110px;
+      background:var(--g03);border:1px solid var(--line);
+      border-right:none;padding:16px 12px;text-align:center;
+    }
+    .sj-step:first-child{border-radius:var(--rs) 0 0 var(--rs);}
+    .sj-step:last-child{border-right:1px solid var(--line);border-radius:0 var(--rs) var(--rs) 0;}
+    .sj-step .sj-num{font-size:10px;font-weight:700;color:var(--g30);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+    .sj-step .sj-name{font-size:13px;font-weight:700;color:var(--g90);margin-bottom:4px;}
+    .sj-step .sj-type{font-size:10px;color:var(--g50);margin-bottom:8px;background:var(--white);border:1px solid var(--line);border-radius:3px;padding:2px 6px;display:inline-block;}
+    .sj-step .sj-note{font-size:11px;color:var(--g50);line-height:1.6;text-align:left;}
+    .sj-step.key{background:var(--white);border-color:var(--g70);}
+    .model-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;margin:2px 2px 0 0;}
+    .model-tag.slow{background:var(--g90);color:var(--white);}
+    .model-tag.mid{background:var(--g15);color:var(--g70);}
+    .model-tag.fast{background:var(--g06);color:var(--g50);border:1px solid var(--line);}
+
+    /* ── AI Architecture Detail ── */
+    .ai-step{background:var(--white);border:1px solid var(--line);border-radius:var(--r);margin-bottom:6px;overflow:hidden;}
+    .ai-step-header{padding:16px 24px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;}
+    .ai-step-header.dark{background:var(--g90);}
+    .ai-step-header.llm{background:var(--g90);}
+    .ai-step-header.feedback{background:var(--g06);}
+    .ai-step-num{font-size:10px;font-weight:800;letter-spacing:2px;color:var(--g30);white-space:nowrap;}
+    .ai-step-header.dark .ai-step-num,.ai-step-header.llm .ai-step-num{color:rgba(255,255,255,0.4);}
+    .ai-step-title{font-size:15px;font-weight:800;color:var(--g90);}
+    .ai-step-header.dark .ai-step-title,.ai-step-header.llm .ai-step-title{color:var(--white);}
+    .ai-step-sub{font-size:12px;color:var(--g50);margin-left:auto;}
+    .ai-step-header.dark .ai-step-sub,.ai-step-header.llm .ai-step-sub{color:rgba(255,255,255,0.5);}
+    .ai-step-body{padding:20px 24px;}
+    .ai-flow-arr{text-align:center;font-size:12px;color:var(--g30);font-weight:600;padding:8px 0;letter-spacing:0.5px;}
+
+    /* Step 1 - data cols */
+    .ai-data-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .ai-data-col-label{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--g30);text-transform:uppercase;margin-bottom:10px;}
+    .ai-data-item{font-size:12px;color:var(--g70);line-height:1.7;display:flex;align-items:flex-start;gap:8px;}
+    .ai-data-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+    .ai-data-dot.auto{background:var(--g90);}
+    .ai-data-dot.manual{background:var(--g30);}
+
+    /* Step 2 - prep grid */
+    .ai-prep-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+    .ai-prep-card{background:var(--g03);border:1px solid var(--line);border-radius:var(--rs);padding:16px 14px;text-align:center;}
+    .ai-prep-icon{font-size:20px;margin-bottom:8px;}
+    .ai-prep-name{font-size:12px;font-weight:700;color:var(--g90);margin-bottom:6px;}
+    .ai-prep-desc{font-size:11px;color:var(--g50);line-height:1.7;}
+
+    /* Step 3 - model grid */
+    .ai-step-core{border-color:var(--g70);}
+    .ai-model-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+    .ai-model-card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:var(--rs);padding:16px 14px;}
+    .ai-model-type{font-size:10px;font-weight:700;letter-spacing:1px;color:rgba(255,255,255,0.45);margin-bottom:4px;text-transform:uppercase;}
+    .ai-model-name{font-size:13px;font-weight:800;color:var(--white);margin-bottom:4px;}
+    .ai-model-algo{font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.1);}
+    .ai-model-io{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px;}
+    .ai-model-in,.ai-model-out{flex:1;font-size:11px;color:rgba(255,255,255,0.65);line-height:1.6;}
+    .ai-model-in strong,.ai-model-out strong{display:block;font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:0.5px;margin-bottom:2px;}
+    .ai-model-arrow{color:rgba(255,255,255,0.3);font-size:14px;padding-top:14px;flex-shrink:0;}
+    .ai-model-use{font-size:11px;color:rgba(255,255,255,0.45);line-height:1.5;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);}
+
+    /* Step 4 - LLM */
+    .ai-step-llm{border-color:var(--g70);}
+    .ai-llm-wrap{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:start;}
+    .ai-llm-section-label{font-size:10px;font-weight:700;letter-spacing:1px;color:rgba(255,255,255,0.4);margin-bottom:10px;text-transform:uppercase;}
+    .ai-llm-context-item{font-size:12px;color:rgba(255,255,255,0.7);line-height:1.8;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.07);}
+    .ai-llm-center{display:flex;align-items:center;justify-content:center;}
+    .ai-llm-engine-box{background:var(--white);border-radius:var(--r);padding:20px 24px;text-align:center;min-width:140px;}
+    .ai-llm-engine-label{font-size:10px;font-weight:800;letter-spacing:2px;color:var(--g30);margin-bottom:4px;}
+    .ai-llm-engine-name{font-size:13px;font-weight:800;color:var(--g90);margin-bottom:10px;}
+    .ai-llm-engine-desc{font-size:11px;color:var(--g50);line-height:1.8;}
+    .ai-llm-out-item{font-size:12px;line-height:1.8;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.07);}
+    .ai-llm-out-item.ok{color:rgba(255,255,255,0.7);}
+    .ai-llm-out-item.warn{color:#f0a500;}
+
+    /* Step 5 - output */
+    .ai-output-flow{display:flex;align-items:flex-start;gap:16px;}
+    .ai-output-master{background:var(--g90);color:var(--white);border-radius:var(--rs);padding:20px 18px;text-align:center;min-width:130px;flex-shrink:0;}
+    .ai-output-master-label{font-size:13px;font-weight:800;color:var(--white);margin-bottom:4px;}
+    .ai-output-master-sub{font-size:11px;color:rgba(255,255,255,0.5);}
+    .ai-output-arr-right{font-size:20px;color:var(--g15);padding-top:20px;flex-shrink:0;}
+    .ai-output-lines{display:flex;flex-direction:column;gap:8px;flex:1;}
+    .ai-output-line{background:var(--g03);border:1px solid var(--line);border-radius:var(--rs);padding:12px 16px;display:flex;align-items:center;gap:16px;}
+    .ai-output-line.opt-line{border-style:dashed;}
+    .ai-output-line-name{font-size:13px;font-weight:700;color:var(--g90);min-width:90px;}
+    .ai-output-line-detail{font-size:11px;color:var(--g50);line-height:1.6;flex:1;}
+    .ai-output-worder{font-size:11px;font-weight:700;color:var(--g90);background:var(--white);border:1px solid var(--line);border-radius:var(--rs);padding:4px 12px;white-space:nowrap;}
+    .opt-tag{font-size:10px;font-weight:600;color:var(--g30);background:var(--g06);border:1px solid var(--line);border-radius:3px;padding:1px 6px;margin-left:4px;}
+
+    /* Step 6 - feedback */
+    .ai-step-feedback{border-color:var(--g15);}
+    .ai-feedback-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+    .ai-feedback-item{background:var(--white);border:1px solid var(--line);border-radius:var(--rs);padding:14px 16px;display:flex;align-items:center;gap:12px;}
+    .ai-feedback-source{font-size:12px;font-weight:700;color:var(--g90);min-width:110px;}
+    .ai-feedback-arrow{font-size:16px;color:var(--g15);flex-shrink:0;}
+    .ai-feedback-target{font-size:12px;color:var(--g70);line-height:1.6;}
+    .ai-feedback-cycle{font-size:10px;color:var(--g30);display:block;margin-top:2px;}
+  </style>
+</head>
+<body>
+
+<!-- ══ Sticky Nav ══ -->
+<nav id="stickyNav">
+  <div class="sn-inner">
+    <a href="#timeline" class="sn-back">← 타임라인</a>
+    <div class="sn-phases">
+      <a href="#phase1" class="sn-phase" data-phase="phase1"><span class="sn-dot"></span>W1–2 킥오프</a>
+      <a href="#phase2" class="sn-phase" data-phase="phase2"><span class="sn-dot"></span>W2–4 SOP변환</a>
+      <a href="#phase3" class="sn-phase" data-phase="phase3"><span class="sn-dot"></span>W3–5 변수조사</a>
+      <a href="#phase4" class="sn-phase" data-phase="phase4"><span class="sn-dot"></span>W4–6 PBA+DB</a>
+      <a href="#phase5" class="sn-phase" data-phase="phase5"><span class="sn-dot"></span>W5–7 AI개발</a>
+      <a href="#phase6" class="sn-phase" data-phase="phase6"><span class="sn-dot"></span>W7–8 파일럿</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ Cover ══ -->
+<div class="cover" id="cover">
+  <div class="cover-eyebrow">Production Planning AI Roadmap · 2026</div>
+  <h1>생산계획 AI 접목<br><em>2개월 실행 로드맵</em></h1>
+  <p class="cover-sub">SOP → 생산계획 → W/Order 발생 전 과정 디지털 전환 계획서</p>
+  <div class="cover-stats">
+    <div class="cs"><span class="n">8주</span><span class="l">총 일정</span></div>
+    <div class="cs"><span class="n">4</span><span class="l">핵심 과제</span></div>
+    <div class="cs"><span class="n">5</span><span class="l">AI 접목 영역</span></div>
+    <div class="cs"><span class="n">70%</span><span class="l">업무효율 목표</span></div>
+  </div>
+</div>
+
+
+<!-- ══════════════════ TIMELINE FIRST ══════════════════ -->
+<div class="page" id="timeline">
+  <div class="sec-header">
+    <div class="sec-eyebrow">Interactive Timeline</div>
+    <h2>2개월 실행 타임라인</h2>
+    <p>각 단계를 클릭하면 해당 과제 상세 내용으로 이동합니다</p>
+  </div>
+
+  <div class="fc mb32">
+    <div class="timeline-grid">
+
+      <!-- Phase 1: W1-2 -->
+      <div class="tl-phase" id="tl-phase1">
+        <div class="tl-week">
+          <span>W1–2</span>
+          <span class="wlabel">1~2주차</span>
+          <span class="wdate">3/25 – 4/7</span>
+        </div>
+        <div class="tl-body">
+          <div class="tl-phase-title">킥오프 &amp; 사전 데이터 수집</div>
+          <div class="tl-tasks">
+            <a href="#phase1" class="tl-tag"><span class="tl-dot"></span>현행 업무 분석 &amp; 직접 학습 시작</a>
+            <a href="#phase1" class="tl-tag"><span class="tl-dot"></span>ERP / MES 데이터 추출 방안 협의</a>
+            <a href="#phase1" class="tl-tag"><span class="tl-dot"></span>사무 담당자 인터뷰 &amp; 문서 수집</a>
+            <a href="#ai-strategy" class="tl-tag"><span class="tl-dot"></span>AI 도구 선정 &amp; 환경 구성</a>
+          </div>
+          <div class="tl-milestone"><span class="ms-badge">KO</span> 킥오프 완료 — 전체 스코프 확정</div>
+          <div class="tl-bar-row"><div class="tl-bar"><div class="tl-bar-fill" style="width:100%"></div></div><span style="font-size:11px;color:var(--g50);white-space:nowrap;">100%</span></div>
+        </div>
+      </div>
+
+      <!-- Phase 2: W2-4 -->
+      <div class="tl-phase" id="tl-phase2">
+        <div class="tl-week">
+          <span>W2–4</span>
+          <span class="wlabel">2~4주차</span>
+          <span class="wdate">4/1 – 4/21</span>
+        </div>
+        <div class="tl-body">
+          <div class="tl-phase-title">과제1 · SOP 코드변환 AI 구축</div>
+          <div class="tl-tasks">
+            <a href="#phase2" class="tl-tag"><span class="tl-dot"></span>SOP 전수조사 &amp; 코드 체계 설계</a>
+            <a href="#phase2" class="tl-tag"><span class="tl-dot"></span>LLM 기반 SOP 파싱 로직 개발</a>
+            <a href="#phase2" class="tl-tag"><span class="tl-dot"></span>사무 업무 프로세스 문서화</a>
+            <a href="#phase2" class="tl-tag"><span class="tl-dot"></span>작업코드 DB 구축</a>
+          </div>
+          <div class="tl-milestone"><span class="ms-badge">M1</span> SOP 코드변환 체계 완성</div>
+        </div>
+      </div>
+
+      <!-- Phase 3: W3-5 -->
+      <div class="tl-phase" id="tl-phase3">
+        <div class="tl-week">
+          <span>W3–5</span>
+          <span class="wlabel">3~5주차</span>
+          <span class="wdate">4/8 – 4/28</span>
+        </div>
+        <div class="tl-body">
+          <div class="tl-phase-title">과제3 · 변수 직접 조사 (라인·공정별)</div>
+          <div class="tl-tasks">
+            <a href="#phase3" class="tl-tag"><span class="tl-dot"></span>S/T 현장 직접 측정 (공정별)</a>
+            <a href="#phase3" class="tl-tag"><span class="tl-dot"></span>작업자 수준 등급 조사</a>
+            <a href="#phase3" class="tl-tag"><span class="tl-dot"></span>순간정지 / 잉여시간 현장 수집</a>
+            <a href="#phase3" class="tl-tag"><span class="tl-dot"></span>기종변경 Matrix 측정</a>
+            <a href="#phase3" class="tl-tag"><span class="tl-dot"></span>기계 데이터 추출 (MES/설비 로그)</a>
+          </div>
+          <div class="tl-milestone"><span class="ms-badge">M2</span> 5대 변수 데이터셋 완성</div>
+        </div>
+      </div>
+
+      <!-- Phase 4: W4-6 -->
+      <div class="tl-phase" id="tl-phase4">
+        <div class="tl-week">
+          <span>W4–6</span>
+          <span class="wlabel">4~6주차</span>
+          <span class="wdate">4/15 – 5/5</span>
+        </div>
+        <div class="tl-body">
+          <div class="tl-phase-title">과제2 · PBA 분류 시스템 + DB 설계 구축</div>
+          <div class="tl-tasks">
+            <a href="#phase4" class="tl-tag"><span class="tl-dot"></span>Master 파일 표준화 &amp; DB 설계</a>
+            <a href="#phase4" class="tl-tag"><span class="tl-dot"></span>PBA 분류 알고리즘 개발</a>
+            <a href="#phase4" class="tl-tag"><span class="tl-dot"></span>변수 DB 구조 설계 &amp; 구축</a>
+            <a href="#phase4" class="tl-tag"><span class="tl-dot"></span>테이블 간 관계 정의 &amp; 검증</a>
+          </div>
+          <div class="tl-milestone"><span class="ms-badge">M3</span> PBA 분류 자동화 완성</div>
+        </div>
+      </div>
+
+      <!-- Phase 5: W5-7 -->
+      <div class="tl-phase" id="tl-phase5">
+        <div class="tl-week">
+          <span>W5–7</span>
+          <span class="wlabel">5~7주차</span>
+          <span class="wdate">4/22 – 5/12</span>
+        </div>
+        <div class="tl-body">
+          <div class="tl-phase-title">과제4 · AI 생산계획 엔진 개발 &amp; 프롬프트 구축</div>
+          <div class="tl-tasks">
+            <a href="#phase5" class="tl-tag"><span class="tl-dot"></span>AI 계획 엔진 개발 (수삽·조립·SMD·IMT)</a>
+            <a href="#prompt" class="tl-tag"><span class="tl-dot"></span>생산계획 프롬프트 템플릿 완성</a>
+            <a href="#phase5" class="tl-tag"><span class="tl-dot"></span>W/Order 자동 생성 연계</a>
+            <a href="#phase5" class="tl-tag"><span class="tl-dot"></span>스케줄링 최적화 알고리즘 적용</a>
+          </div>
+          <div class="tl-milestone"><span class="ms-badge">M4</span> AI 엔진 개발 완료</div>
+        </div>
+      </div>
+
+      <!-- Phase 6: W7-8 -->
+      <div class="tl-phase" id="tl-phase6">
+        <div class="tl-week">
+          <span>W7–8</span>
+          <span class="wlabel">7~8주차</span>
+          <span class="wdate">5/6 – 5/19</span>
+        </div>
+        <div class="tl-body">
+          <div class="tl-phase-title">전체 통합 파일럿 &amp; Go-Live</div>
+          <div class="tl-tasks">
+            <a href="#phase6" class="tl-tag"><span class="tl-dot"></span>파일럿 라인 실제 운영 (1개 라인)</a>
+            <a href="#phase6" class="tl-tag"><span class="tl-dot"></span>KPI 측정 &amp; Gap 분석</a>
+            <a href="#phase6" class="tl-tag"><span class="tl-dot"></span>오류 보정 &amp; 재학습</a>
+            <a href="#phase6" class="tl-tag"><span class="tl-dot"></span>전체 라인 배포</a>
+          </div>
+          <div class="tl-milestone"><span class="ms-badge">GO</span> 전체 라인 자동계획 Go-Live</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- KPI 요약 -->
+  <div class="sec-header mt32">
+    <div class="sec-eyebrow">목표 KPI</div>
+    <h2>업무 효율 70% 향상 목표</h2>
+    <p>현실적으로 달성 가능한 항목별 세부 목표 — 2개월 후 기준</p>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-n">85%</div>
+      <div class="kpi-t">생산계획 수립 시간 단축</div>
+      <div class="kpi-d">현재 2일 → 2~3시간 이내<br>반복 수작업 제거</div>
+      <div class="kpi-bar-wrap"><div class="kpi-bar-bg"><div class="kpi-bar-fg" style="width:85%"></div></div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-n">80%</div>
+      <div class="kpi-t">W/Order 오류율 감소</div>
+      <div class="kpi-d">수작업 입력 오류 → 자동 생성<br>검수 시간 대폭 감소</div>
+      <div class="kpi-bar-wrap"><div class="kpi-bar-bg"><div class="kpi-bar-fg" style="width:80%"></div></div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-n">+8%p</div>
+      <div class="kpi-t">납기 준수율 향상</div>
+      <div class="kpi-d">현재 납기 준수율 +8%p 개선<br>정밀 계획 → 납기 예측 가능</div>
+      <div class="kpi-bar-wrap"><div class="kpi-bar-bg"><div class="kpi-bar-fg" style="width:60%"></div></div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-n">30%</div>
+      <div class="kpi-t">기종변경 손실 감소</div>
+      <div class="kpi-d">최적 시퀀싱으로 불필요한<br>기종변경 횟수 및 시간 단축</div>
+      <div class="kpi-bar-wrap"><div class="kpi-bar-bg"><div class="kpi-bar-fg" style="width:30%"></div></div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-n">90%</div>
+      <div class="kpi-t">데이터 수집·보고 자동화</div>
+      <div class="kpi-d">일일 보고서, 실적 집계 등<br>반복 작업 자동화</div>
+      <div class="kpi-bar-wrap"><div class="kpi-bar-bg"><div class="kpi-bar-fg" style="width:90%"></div></div></div>
+    </div>
+    <div class="kpi-card" style="border:2px solid var(--g90);">
+      <div class="kpi-n">70%</div>
+      <div class="kpi-t">종합 업무 효율 향상</div>
+      <div class="kpi-d">위 항목 가중 평균 기준<br><strong>현실적 달성 목표치</strong></div>
+      <div class="kpi-bar-wrap"><div class="kpi-bar-bg"><div class="kpi-bar-fg" style="width:70%"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ══════════════════ AI 접목 전략 ══════════════════ -->
+<div class="page" id="ai-strategy">
+  <div class="sec-header">
+    <div class="sec-eyebrow">AI Strategy</div>
+    <h2>AI 접목 전략 — 어떤 AI를 어디에 쓸 것인가</h2>
+    <p>생성형 모델 하나로 해결하지 않는다. 문제 유형에 맞는 AI 도구를 조합해 사용한다.</p>
+  </div>
+
+  <div class="ai-grid mb32">
+    <div class="ai-card">
+      <div class="ac-label">Generative AI</div>
+      <div class="ac-title">LLM (GPT-4o / Claude)</div>
+      <div class="ac-desc">자연어 기반 계획 수립, SOP 파싱·분류, 이상 상황 분석 보고서 자동 작성에 활용.</div>
+      <div class="ac-use">
+        <strong>적용 영역</strong>
+        SOP 내용 파싱 및 코드 분류<br>
+        생산계획 프롬프트 엔진<br>
+        Gap 분석 리포트 자동 작성<br>
+        담당자 질의응답 챗봇
+      </div>
+    </div>
+    <div class="ai-card">
+      <div class="ac-label">Predictive ML</div>
+      <div class="ac-title">예측 모델 (Python / Prophet)</div>
+      <div class="ac-desc">과거 실적 데이터를 학습해 수요·S/T·순간정지를 예측. 계획 보정 계수로 활용.</div>
+      <div class="ac-use">
+        <strong>적용 영역</strong>
+        수요 예측 (Prophet / SARIMA)<br>
+        S/T 실적 보정 (Ridge Regression)<br>
+        순간정지 발생 예측<br>
+        납기 미준수 리스크 예측
+      </div>
+    </div>
+    <div class="ai-card">
+      <div class="ac-label">Optimization</div>
+      <div class="ac-title">최적화 알고리즘 (OR-Tools)</div>
+      <div class="ac-desc">기종변경 최소화 시퀀싱, 라인 부하 균등화 등 수리최적화 문제에 적용.</div>
+      <div class="ac-use">
+        <strong>적용 영역</strong>
+        기종변경 순서 최적화 (TSP 변형)<br>
+        라인 부하 균등 배분 (LP/CP)<br>
+        인원 배치 최적화<br>
+        납기 제약 조건 해결
+      </div>
+    </div>
+    <div class="ai-card">
+      <div class="ac-label">OCR + NLP</div>
+      <div class="ac-title">문서 구조화 (Tesseract / GPT Vision)</div>
+      <div class="ac-desc">SOP PDF·스캔 이미지에서 텍스트 추출 후 구조화. 수기 문서도 처리 가능.</div>
+      <div class="ac-use">
+        <strong>적용 영역</strong>
+        SOP 문서 텍스트 추출 (OCR)<br>
+        작업 항목 자동 분류 (NLP)<br>
+        표/그림 포함 문서 파싱<br>
+        코드 자동 부여 및 매핑
+      </div>
+    </div>
+    <div class="ai-card">
+      <div class="ac-label">RPA</div>
+      <div class="ac-title">업무 자동화 (Python / UiPath)</div>
+      <div class="ac-desc">ERP·MES 데이터 자동 추출, W/Order 자동 입력, 보고서 자동 발송 등.</div>
+      <div class="ac-use">
+        <strong>적용 영역</strong>
+        ERP 실적 데이터 자동 추출<br>
+        W/Order 자동 생성·입력<br>
+        일일 생산 실적 집계 자동화<br>
+        이메일·메신저 보고 자동화
+      </div>
+    </div>
+    <div class="ai-card" style="border-style:dashed;">
+      <div class="ac-label">검토 중</div>
+      <div class="ac-title">Computer Vision (영상 S/T 분석)</div>
+      <div class="ac-desc">작업자 스마트폰으로 공정 영상을 촬영, AI가 동작을 분석해 S/T를 자동 측정하는 방안.</div>
+      <div class="ac-use">
+        <strong>현재 상태 — 아이디어 단계</strong>
+        YOLO / MediaPipe 기반 동작 인식<br>
+        작업 단계별 시간 자동 측정<br>
+        현장 배포 가능성 검토 필요<br>
+        <em style="color:var(--g30);">→ 1단계 완료 후 별도 검토 예정</em>
+      </div>
+    </div>
+  </div>
+
+  <div class="fc">
+    <div style="font-size:13px;font-weight:700;color:var(--g90);margin-bottom:16px;">데이터 수집 전략 — 기계 데이터 vs 직접 조사 병행</div>
+    <div class="ig2">
+      <div class="ibox white">
+        <div class="ibox-title">기계·시스템에서 뽑는 데이터</div>
+        <ul>
+          <li>ERP 생산 실적 (품목별 일별 생산량)</li>
+          <li>MES 설비 로그 (가동/정지 시간, 순간정지 횟수)</li>
+          <li>설비 OEE 데이터 (가용률·성능률·품질률)</li>
+          <li>납기 이력 / W/Order 실적 데이터</li>
+          <li>불량 데이터 (품질 시스템 연동)</li>
+          <li>자재 입출고 이력 (ERP 재고 모듈)</li>
+        </ul>
+      </div>
+      <div class="ibox white">
+        <div class="ibox-title">직접 현장 조사가 필요한 데이터</div>
+        <ul>
+          <li>공정별 S/T — 직접 스톱워치 측정 (라인별)</li>
+          <li>작업자 수준 등급 — 담당 반장·팀장 인터뷰</li>
+          <li>잉여시간 항목 — 현장 관찰 및 작업일보 수집</li>
+          <li>기종변경 소요시간 Matrix — 실제 변경 관찰</li>
+          <li>사무 업무 프로세스 — 담당자 직접 인터뷰 & 학습</li>
+          <li>현장 운영 관행 — 비정형 지식 (미문서화 규칙)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note mt16">
+      <strong>PM 메모</strong>
+      사무 담당자에게 파일·데이터·업무 형식을 받고, 직접 옆에서 배우면서 하나씩 문서화할 예정. 처음부터 완벽한 데이터를 기대하지 않고, 수집 가능한 것부터 시작해 점진적으로 정밀도를 높이는 Agile 방식으로 진행.
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ══════════════════ PHASE 1 ══════════════════ -->
+<div class="page" id="phase1">
+  <div class="sec-header">
+    <div class="sec-eyebrow">Phase 1 · W1–2</div>
+    <h2>킥오프 &amp; 사전 데이터 수집 계획</h2>
+    <p>직접 현장·사무 학습 시작 + 시스템 데이터 추출 경로 확보</p>
+  </div>
+
+  <div class="step-row">
+    <div class="step-node"><div class="step-circ">1</div><div class="step-lbl">현장 파악</div></div>
+    <div class="step-conn"></div>
+    <div class="step-node"><div class="step-circ">2</div><div class="step-lbl">담당자 인터뷰</div></div>
+    <div class="step-conn"></div>
+    <div class="step-node"><div class="step-circ">3</div><div class="step-lbl">문서 수집</div></div>
+    <div class="step-conn"></div>
+    <div class="step-node"><div class="step-circ">4</div><div class="step-lbl">시스템 접근권 확보</div></div>
+    <div class="step-conn"></div>
+    <div class="step-node"><div class="step-circ">5</div><div class="step-lbl">AI 환경 구성</div></div>
+    <div class="step-conn"></div>
+    <div class="step-node"><div class="step-circ">6</div><div class="step-lbl">스코프 확정</div></div>
+  </div>
+
+  <div class="ig2 mb24">
+    <div class="fc-sm">
+      <div style="font-size:13px;font-weight:700;color:var(--g90);margin-bottom:14px;">사무 업무 직접 학습 계획</div>
+      <div class="ibox">
+        <div class="ibox-title">현장에서 직접 배울 내용</div>
+        <ul>
+          <li>생산계획 담당자 옆에서 실제 계획 수립 과정 관찰</li>
+          <li>현재 사용 중인 Excel/ERP 파일 형식 및 입력 로직 파악</li>
+          <li>수요 접수 → 계획 수립 → W/Order 발행까지 전 단계 Follow-up</li>
+          <li>비정형 의사결정 기준 파악 (경험에 의존하는 규칙들)</li>
+          <li>예외 상황 처리 방식 (긴급 오더, 설비 고장 시 대응)</li>
+          <li>부서 간 커뮤니케이션 방식 및 협의 포인트 파악</li>
+        </ul>
+      </div>
+    </div>
+    <div class="fc-sm">
+      <div style="font-size:13px;font-weight:700;color:var(--g90);margin-bottom:14px;">AI 환경 구성 체크리스트</div>
+      <div class="ibox">
+        <div class="ibox-title">W1~2 안에 준비할 것</div>
+        <ul>
+          <li>LLM API 계정 확보 (OpenAI / Anthropic Claude)</li>
+          <li>Python 개발 환경 구성 (pandas, langchain, OR-Tools)</li>
+          <li>ERP 데이터 추출 경로 확보 (Excel 내보내기 or API)</li>
+          <li>테스트용 샘플 데이터 수집 (최소 3개월치)</li>
+          <li>보안 검토 — 사내 데이터 외부 AI 전송 허용 여부 확인</li>
+          <li>파일럿 대상 라인 1개 선정 (가장 단순한 라인부터)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ══════════════════ PHASE 2 ══════════════════ -->
+<div class="page" id="phase2">
+  <div class="sec-header">
+    <div class="sec-eyebrow">Phase 2 · W2–4 · 과제1</div>
+    <h2>SOP → 코드변환 AI 구축</h2>
+    <p>현행 SOP 문서를 AI가 파싱하여 표준 작업코드로 자동 변환</p>
+  </div>
+
+  <div class="fc mb24">
+    <div style="font-size:13px;font-weight:700;color:var(--g90);margin-bottom:20px;">SOP 코드변환 처리 흐름</div>
+    <div class="flow-inputs">
+      <div class="fi"><div class="icon">📄</div><div class="name">PDF SOP</div><div class="sub">설계·공정 문서</div></div>
+      <div class="fi"><div class="icon">📊</div><div class="name">Excel SOP</div><div class="sub">작업지침서 표</div></div>
+      <div class="fi"><div class="icon">🖼️</div><div class="name">스캔 이미지</div><div class="sub">구형 SOP 문서</div></div>
+      <div class="fi"><div class="icon">📝</div><div class="name">수기 문서</div><div class="sub">현장 규칙·메모</div></div>
+    </div>
+    <div class="farr-d mt8"><div class="fl"></div><div class="ft"></div></div>
+    <div class="flow-two mt8">
+      <div class="flow-step"><div class="fs-label">Step 01</div><div class="fs-title">OCR 텍스트 추출</div><div class="fs-sub">Tesseract / GPT-Vision</div></div>
+      <div class="farr"><div class="fl"></div><div class="ft"></div></div>
+      <div class="flow-step"><div class="fs-label">Step 02</div><div class="fs-title">LLM 파싱 &amp; 구조화</div><div class="fs-sub">작업 항목 자동 인식</div></div>
+    </div>
+    <div class="farr-d mt8"><div class="fl"></div><div class="ft"></div></div>
+    <div class="flow-step mt8 dark">
+      <div class="fs-label">Step 03</div>
+      <div class="fs-title">작업코드 자동 부여 → Master DB 등록</div>
+      <div class="fs-sub">공정코드 매핑 테이블 기반 자동 분류 → T_SOP_CODE 테이블 저장</div>
+    </div>
+  </div>
+
+  <div class="ig2">
+    <div class="ibox white">
+      <div class="ibox-title">반드시 조사할 항목</div>
+      <ul>
+        <li>전체 SOP 문서 수량 및 파일 형식 비율 (PDF/Excel/스캔)</li>
+        <li>현행 작업코드 체계 존재 여부 — 없으면 先 설계 필요</li>
+        <li>공정별·라인별 SOP 커버리지 (공백 파악)</li>
+        <li>SOP 버전 관리 현황 (최신본 vs 구버전 혼재 여부)</li>
+        <li>ERP 작업코드와 SOP 매핑 현황</li>
+        <li>SOP 개정 승인 프로세스 (누가 관리하는가)</li>
+      </ul>
+    </div>
+    <div class="ibox white">
+      <div class="ibox-title">리스크 &amp; 대응 방안</div>
+      <ul>
+        <li>구형 스캔 이미지 OCR 품질 낮을 경우 → GPT-Vision 병행</li>
+        <li>작업코드 기준 없으면 → 1주일 내 코드 체계 먼저 확정</li>
+        <li>동일 작업 다중 SOP 버전 → 최신 버전 우선, 이력 보존</li>
+        <li>현장 실제 작업 ≠ SOP 내용 → 현장 확인 후 SOP 보정</li>
+        <li>AI 변환 오류 발생 → 담당자 검수 필수 (자동화 신뢰도 95% 목표)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ══════════════════ PHASE 3: 변수 조사 ══════════════════ -->
+<div class="page" id="phase3">
+  <div class="sec-header">
+    <div class="sec-eyebrow">Phase 3 · W3–5 · 과제3</div>
+    <h2>생산계획 핵심 변수 직접 조사 (라인·공정별)</h2>
+    <p>기계에서 뽑을 수 있는 건 뽑고, 없는 건 직접 현장에서 측정한다</p>
+  </div>
+
+  <div class="var-grid">
+
+    <!-- S/T -->
+    <div class="var-card">
+      <div class="var-head">
+        <div class="var-num">①</div>
+        <h3>S/T (표준시간) — 직접 측정 필수</h3>
+      </div>
+      <div class="var-def">
+        <strong>수집 방법</strong> 라인·공정별·모델별 스톱워치 측정 (본인 직접)<br>
+        <strong>기계 보완</strong> FPT/ICT/비전 등 설비 로그로 기계 공정 S/T 추출<br>
+        <strong>핵심 원칙</strong> S/T는 공정별이 아닌 <u>공정 × 모델</u> 조합으로 측정해야 정확한 계획 가능
+      </div>
+      <table class="dt" style="margin-top:0;">
+        <thead><tr><th>수집 항목</th><th>방법</th><th>주기</th><th>비고</th></tr></thead>
+        <tbody>
+          <tr><td>수삽 S/T (모델별)</td><td>스톱워치 직접 측정 (n=20 이상/모델)</td><td>전체 도입 후 신모델 시</td><td>모델별 편차 가장 큼</td></tr>
+          <tr><td>리터치 S/T (모델별)</td><td>실적 발생 건 측정 + 비율 산출</td><td>월별</td><td>불량률 연동 보정</td></tr>
+          <tr><td>비전검사 S/T</td><td>기계 로그 추출</td><td>프로그램 변경 시</td><td>모델별 검사 프로그램 등록</td></tr>
+          <tr><td>FPT 테스트 시간</td><td>기계 로그 자동 추출</td><td>월별</td><td>포인트 수 기반 예측 가능</td></tr>
+          <tr><td>ICT 테스트 시간</td><td>기계 로그 자동 추출</td><td>월별</td><td>지그 교체 시간 포함 필수</td></tr>
+          <tr><td>코팅 S/T (방식별)</td><td>기계: 로그 / 수작업: 직접 측정</td><td>초기 1회</td><td>기계·수작업 분리 등록</td></tr>
+          <tr><td>숙련도 보정 계수</td><td>모델×작업자 실적 통계</td><td>분기</td><td>숙련도 등급 연계</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>영상 S/T 분석 AI (검토 중)</strong>
+        작업자 스마트폰으로 공정 영상 촬영 → AI가 동작 단계 자동 인식 → S/T 자동 측정. 현재 아이디어 단계로, 1단계 완료 후 별도 검토 예정.
+      </div>
+    </div>
+
+    <!-- 작업자 수준 -->
+    <div class="var-card">
+      <div class="var-head">
+        <div class="var-num">②</div>
+        <h3>작업자 수준 — 라인장 인터뷰</h3>
+      </div>
+      <div class="var-def">
+        <strong>수집 방법</strong> 각 라인 반장·팀장 인터뷰 + 인사 기록 연계<br>
+        <strong>기계 보완</strong> MES 작업자별 실적 데이터로 등급 검증<br>
+        <strong>목표</strong> 전 작업자 등급화 → 배치 최적화 AI 입력값
+      </div>
+      <table class="dt" style="margin-top:0;">
+        <thead><tr><th>등급</th><th>기준</th><th>S/T 계수</th></tr></thead>
+        <tbody>
+          <tr><td>S급</td><td>3년 이상</td><td>1.10~1.20</td></tr>
+          <tr><td>A급</td><td>1~3년</td><td>0.95~1.10</td></tr>
+          <tr><td>B급</td><td>6개월~1년</td><td>0.80~0.95</td></tr>
+          <tr><td>C급</td><td>6개월 미만</td><td>0.65~0.80</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>조사 포인트</strong>
+        현재 공식 등급제 없을 가능성 높음 → 직접 등급 기준 제안 후 합의. 라인장의 주관적 판단을 수치화하는 과정이 핵심.
+      </div>
+    </div>
+
+    <!-- 순간정지 -->
+    <div class="var-card">
+      <div class="var-head">
+        <div class="var-num">③</div>
+        <h3>순간정지 — MES 로그 추출 우선</h3>
+      </div>
+      <div class="var-def">
+        <strong>수집 방법</strong> MES 설비 로그 우선 추출 / 없으면 현장 관찰<br>
+        <strong>기계 보완</strong> IoT 센서 데이터 (설비 있는 경우)<br>
+        <strong>목표</strong> 라인별 평균 순간정지율 → 계획 보정 계수화
+      </div>
+      <table class="dt" style="margin-top:0;">
+        <thead><tr><th>수집 항목</th><th>방법</th></tr></thead>
+        <tbody>
+          <tr><td>순간정지 횟수/일</td><td>MES 로그 추출</td></tr>
+          <tr><td>평균 정지 시간</td><td>로그 계산</td></tr>
+          <tr><td>발생 원인 분류</td><td>현장 관찰 + 작업자 기록</td></tr>
+          <tr><td>설비별 취약 패턴</td><td>통계 분석</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>현실적 접근</strong>
+        MES가 없거나 로그 수집이 안 되는 경우, 1~2주간 직접 현장 관찰로 데이터 수집. 초기엔 라인별 평균치 추정값으로 시작해도 충분.
+      </div>
+    </div>
+
+    <!-- 잉여시간 -->
+    <div class="var-card">
+      <div class="var-head">
+        <div class="var-num">④</div>
+        <h3>잉여시간 — 현장 관찰 + 작업일보</h3>
+      </div>
+      <div class="var-def">
+        <strong>수집 방법</strong> 작업일보 수집 + 현장 관찰 (2~3일)<br>
+        <strong>기계 보완</strong> MES 착수·완료 시간 대비 분석<br>
+        <strong>목표</strong> 실 가동시간 = 총 근무시간 × (1 - 잉여시간율)
+      </div>
+      <table class="dt" style="margin-top:0;">
+        <thead><tr><th>항목</th><th>현실적 추정치</th></tr></thead>
+        <tbody>
+          <tr><td>작업 준비·정리</td><td>3~5%</td></tr>
+          <tr><td>조회·교육</td><td>1~2%</td></tr>
+          <tr><td>물류 대기</td><td>2~5%</td></tr>
+          <tr><td>품질 검사</td><td>3~7%</td></tr>
+          <tr><td>합계 (라인마다 상이)</td><td>약 10~20%</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>현실적 접근</strong>
+        처음엔 라인 담당자 경험치로 시작. "실제 생산에 쓰는 시간이 하루 8시간 중 몇 시간?" 이 질문으로 빠르게 추정 가능.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 기종변경 (full width) -->
+  <div class="fc mb24">
+    <div class="var-head" style="border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:20px;">
+      <div class="var-num">⑤</div>
+      <div>
+        <h3 style="font-size:16px;font-weight:700;color:var(--g90);">기종변경 — 실제 변경 관찰 + Matrix 작성</h3>
+        <p style="font-size:13px;color:var(--g50);margin-top:4px;">기종 A → B 전환 시 몇 분이 걸리는가? 모든 조합을 실측해야 AI 최적화 가능</p>
+      </div>
+    </div>
+    <div class="ig3">
+      <div class="ibox">
+        <div class="ibox-title">직접 측정 항목</div>
+        <ul>
+          <li>지그·치공구 교체 시간</li>
+          <li>프로그램 교체 (다운로드) 시간</li>
+          <li>자재 교체·준비 시간</li>
+          <li>초도품 검사 및 시운전 시간</li>
+          <li>첫 양품 판정까지 소요 시간</li>
+        </ul>
+      </div>
+      <div class="ibox">
+        <div class="ibox-title">기종변경 시간 Matrix 예시</div>
+        <div style="overflow-x:auto;margin-top:4px;">
+          <table class="dt" style="font-size:11px;">
+            <thead><tr><th>→</th><th>PBA-A</th><th>PBA-B</th><th>PBA-C</th></tr></thead>
+            <tbody>
+              <tr><td><strong>PBA-A</strong></td><td>—</td><td>35분</td><td>52분</td></tr>
+              <tr><td><strong>PBA-B</strong></td><td>35분</td><td>—</td><td>28분</td></tr>
+              <tr><td><strong>PBA-C</strong></td><td>52분</td><td>28분</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="ibox">
+        <div class="ibox-title">AI 최적화 목표</div>
+        <ul>
+          <li>Matrix 입력 → 최소 이동거리 최적 순서</li>
+          <li>납기 제약과 결합한 복합 최적화</li>
+          <li>설비별 최적 시퀀스 자동 제안</li>
+          <li>기종 추가 시 Matrix 자동 업데이트</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ══════════════════ PHASE 4: PBA + DB ══════════════════ -->
+<div class="page" id="phase4">
+  <div class="sec-header">
+    <div class="sec-eyebrow">Phase 4 · W4–6 · 과제2</div>
+    <h2>PBA 분류 시스템 + 데이터베이스 설계</h2>
+    <p>Master 파일 표준화 + 핵심 4개 테이블 DB 구조 설계 및 구축</p>
+  </div>
+
+  <!-- DB Schema -->
+  <div class="db-grid mb32">
+
+    <!-- T_SOP_CODE -->
+    <div class="db-table">
+      <div class="db-head">T_SOP_CODE <small>SOP 코드 마스터</small></div>
+      <div class="db-body">
+        <div class="db-row"><div class="db-key pk">PK</div><div class="db-fname">SOP_ID</div><div class="db-ftype">VARCHAR(20)</div><div class="db-fdesc">SOP 고유 ID</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">SOP_CODE</div><div class="db-ftype">VARCHAR(20)</div><div class="db-fdesc">변환된 작업코드</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">SOP_NAME</div><div class="db-ftype">VARCHAR(100)</div><div class="db-fdesc">작업명</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">PROCESS_CODE</div><div class="db-ftype">VARCHAR(20)</div><div class="db-fdesc">공정 코드</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">LINE_CODE</div><div class="db-ftype">VARCHAR(10)</div><div class="db-fdesc">라인 코드</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">AI_CONFIDENCE</div><div class="db-ftype">FLOAT</div><div class="db-fdesc">AI 분류 신뢰도</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">VERIFIED_YN</div><div class="db-ftype">CHAR(1)</div><div class="db-fdesc">담당자 검수 여부</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">VERSION</div><div class="db-ftype">INT</div><div class="db-fdesc">SOP 버전</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">UPDATED_AT</div><div class="db-ftype">DATETIME</div><div class="db-fdesc">최종 수정일</div></div>
+      </div>
+    </div>
+
+    <!-- T_PBA_MASTER -->
+    <div class="db-table">
+      <div class="db-head">T_PBA_MASTER <small>PBA 품목 마스터</small></div>
+      <div class="db-body">
+        <div class="db-row"><div class="db-key pk">PK</div><div class="db-fname">PBA_CODE</div><div class="db-ftype">VARCHAR(20)</div><div class="db-fdesc">PBA 고유 코드</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">PBA_NAME</div><div class="db-ftype">VARCHAR(100)</div><div class="db-fdesc">PBA 품목명</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">PRODUCT_GROUP_L</div><div class="db-ftype">VARCHAR(20)</div><div class="db-fdesc">제품군 (대)</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">PRODUCT_GROUP_M</div><div class="db-ftype">VARCHAR(20)</div><div class="db-fdesc">제품군 (중)</div></div>
+        <div class="db-row"><div class="db-key fk">FK</div><div class="db-fname">VENDOR_CODE</div><div class="db-ftype">VARCHAR(10)</div><div class="db-fdesc">공급업체 코드</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">MOQ</div><div class="db-ftype">INT</div><div class="db-fdesc">최소 발주 수량</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">LEAD_TIME_DAY</div><div class="db-ftype">INT</div><div class="db-fdesc">납기 리드타임(일)</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">COMMON_YN</div><div class="db-ftype">CHAR(1)</div><div class="db-fdesc">공용부품 여부</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">ABC_GRADE</div><div class="db-ftype">CHAR(1)</div><div class="db-fdesc">ABC 등급</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">SAFETY_STOCK</div><div class="db-ftype">INT</div><div class="db-fdesc">안전재고 수량</div></div>
+      </div>
+      <div class="db-rel"><strong>관계</strong> VENDOR_CODE → T_VENDOR_MASTER (확장 시)</div>
+    </div>
+
+    <!-- T_PRODUCTION_VAR -->
+    <div class="db-table">
+      <div class="db-head">T_PRODUCTION_VAR <small>생산 변수 마스터</small></div>
+      <div class="db-body">
+        <div class="db-row"><div class="db-key pk">PK</div><div class="db-fname">VAR_ID</div><div class="db-ftype">VARCHAR(20)</div><div class="db-fdesc">변수 고유 ID</div></div>
+        <div class="db-row"><div class="db-key fk">FK</div><div class="db-fname">PBA_CODE</div><div class="db-ftype">VARCHAR(20)</div><div class="db-fdesc">품목 코드</div></div>
+        <div class="db-row"><div class="db-key fk">FK</div><div class="db-fname">LINE_CODE</div><div class="db-ftype">VARCHAR(10)</div><div class="db-fdesc">라인 코드</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">ST_DESIGN_SEC</div><div class="db-ftype">FLOAT</div><div class="db-fdesc">설계 S/T (초)</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">ST_ACTUAL_SEC</div><div class="db-ftype">FLOAT</div><div class="db-fdesc">실적 S/T (초)</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">MINOR_STOP_RATE</div><div class="db-ftype">FLOAT</div><div class="db-fdesc">순간정지율 (%)</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">SURPLUS_TIME_RATE</div><div class="db-ftype">FLOAT</div><div class="db-fdesc">잉여시간율 (%)</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">WORKER_LEVEL_AVG</div><div class="db-ftype">FLOAT</div><div class="db-fdesc">평균 숙련도 계수</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">MEASURED_AT</div><div class="db-ftype">DATE</div><div class="db-fdesc">측정 기준일</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">DATA_SOURCE</div><div class="db-ftype">VARCHAR(20)</div><div class="db-fdesc">수집 방법 (직접/MES)</div></div>
+      </div>
+      <div class="db-rel"><strong>관계</strong> PBA_CODE → T_PBA_MASTER / LINE_CODE → T_LINE_MASTER</div>
+    </div>
+
+    <!-- T_WORK_ORDER -->
+    <div class="db-table">
+      <div class="db-head">T_WORK_ORDER <small>작업 지시 (W/Order)</small></div>
+      <div class="db-body">
+        <div class="db-row"><div class="db-key pk">PK</div><div class="db-fname">WO_ID</div><div class="db-ftype">VARCHAR(20)</div><div class="db-fdesc">W/Order 고유번호</div></div>
+        <div class="db-row"><div class="db-key fk">FK</div><div class="db-fname">PBA_CODE</div><div class="db-ftype">VARCHAR(20)</div><div class="db-fdesc">생산 품목 코드</div></div>
+        <div class="db-row"><div class="db-key fk">FK</div><div class="db-fname">LINE_CODE</div><div class="db-ftype">VARCHAR(10)</div><div class="db-fdesc">생산 라인</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">PLAN_QTY</div><div class="db-ftype">INT</div><div class="db-fdesc">계획 수량</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">PLAN_START_DT</div><div class="db-ftype">DATETIME</div><div class="db-fdesc">계획 시작일시</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">PLAN_END_DT</div><div class="db-ftype">DATETIME</div><div class="db-fdesc">계획 완료일시</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">DUE_DATE</div><div class="db-ftype">DATE</div><div class="db-fdesc">납기일</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">PRIORITY</div><div class="db-ftype">INT</div><div class="db-fdesc">우선순위</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">AI_GENERATED_YN</div><div class="db-ftype">CHAR(1)</div><div class="db-fdesc">AI 자동 생성 여부</div></div>
+        <div class="db-row"><div class="db-key"></div><div class="db-fname">STATUS</div><div class="db-ftype">VARCHAR(10)</div><div class="db-fdesc">상태 (대기/진행/완료)</div></div>
+      </div>
+      <div class="db-rel"><strong>관계</strong> PBA_CODE → T_PBA_MASTER / LINE_CODE → T_LINE_MASTER</div>
+    </div>
+
+  </div>
+
+  <!-- PBA 분류 3축 -->
+  <div class="fc">
+    <div style="font-size:13px;font-weight:700;color:var(--g90);margin-bottom:16px;">PBA 자동 분류 3축 체계</div>
+    <div class="ig3">
+      <div class="ibox">
+        <div class="ibox-title">① 수량 기준</div>
+        <ul>
+          <li>MOQ 기반 대량/소량 구분</li>
+          <li>ABC 분석 기반 등급화</li>
+          <li>월평균 소요량 자동 계산</li>
+          <li>안전재고 연계 발주 트리거</li>
+          <li>계절성 변동 보정치 반영</li>
+        </ul>
+      </div>
+      <div class="ibox">
+        <div class="ibox-title">② CODE 기준</div>
+        <ul>
+          <li>제품군 코드 계층 구조 (대/중/소)</li>
+          <li>공용 PBA vs 전용 PBA 자동 구분</li>
+          <li>단종·신규 코드 자동 감지 Alert</li>
+          <li>코드 중복·오류 자동 검증</li>
+          <li>개정 이력 자동 추적</li>
+        </ul>
+      </div>
+      <div class="ibox">
+        <div class="ibox-title">③ 업체 기준</div>
+        <ul>
+          <li>공급업체 납기 리드타임 자동 반영</li>
+          <li>품질등급 연계 우선순위 설정</li>
+          <li>복수 업체 대체 우선순위 정의</li>
+          <li>업체 변경 이력 자동 추적</li>
+          <li>납기 리스크 사전 Alert</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ══════════════════ PHASE 5: AI 엔진 + 프롬프트 ══════════════════ -->
+<div class="page" id="phase5">
+  <div class="sec-header">
+    <div class="sec-eyebrow">Phase 5 · W5–7 · 과제4</div>
+    <h2>AI 생산계획 자동수립 엔진 개발</h2>
+    <p>수삽·조립·SMD·IMT 4개 라인 자동 계획 수립 및 W/Order 자동 배포</p>
+  </div>
+
+  <!-- 4개 라인 카드 -->
+  <div class="lc4">
+    <div class="lcard">
+      <div class="lcard-icon">🖐️</div>
+      <div class="lcard-title">수삽</div>
+      <ul>
+        <li>수삽·리터치·비전·FPT·ICT·코팅</li>
+        <li>작업자 의존도 최고</li>
+        <li>모델별 S/T 편차 가장 큼</li>
+        <li>ICT 지그 교체 = 기종변경 비용</li>
+        <li>코팅 방식 (기계/수작업) 분기</li>
+      </ul>
+      <div class="lcard-ai"><strong>핵심 AI</strong>모델×공정 S/T 자동 계산<br>작업자 스킬 매칭 최적화</div>
+    </div>
+  <div class="lcard">
+      <div class="lcard-icon">🔧</div>
+      <div class="lcard-title">조립</div>
+      <ul>
+        <li>기계 + 수작업 혼합</li>
+        <li>선·후행 공정 의존성</li>
+        <li>BOM 기반 자재 연동</li>
+        <li>반제품 재고 연계 필수</li>
+      </ul>
+      <div class="lcard-ai"><strong>핵심 AI</strong>공정 순서 자동 최적화<br>병목 공정 사전 탐지</div>
+    </div>
+    <div class="lcard">
+      <div class="lcard-icon">⚡</div>
+      <div class="lcard-title">SMD</div>
+      <ul>
+        <li>고자동화 — 기계 의존</li>
+        <li>기종변경 비용 매우 높음</li>
+        <li>설비 가동률이 핵심</li>
+        <li>OEE 기반 계획 필수</li>
+      </ul>
+      <div class="lcard-ai"><strong>핵심 AI</strong>OEE 예측 기반 계획<br>기종변경 최소화 시퀀싱</div>
+    </div>
+    <div class="lcard">
+      <div class="lcard-icon">🔩</div>
+      <div class="lcard-title">IMT</div>
+      <ul>
+        <li>자동 삽입기 + 수삽 혼합</li>
+        <li>자재 리드타임 긴 편</li>
+        <li>SMD 연계 공정 흐름</li>
+        <li>기종별 지그 교체 필요</li>
+      </ul>
+      <div class="lcard-ai"><strong>핵심 AI</strong>SMD-IMT 동기화 계획<br>자재 조달 자동 트리거</div>
+    </div>
+  </div>
+
+
+  <!-- 6단계 자동화 -->
+  <div class="fc mb24">
+    <div style="font-size:13px;font-weight:700;color:var(--g90);margin-bottom:20px;">자동 생산계획 수립 6단계 프로세스</div>
+    <div class="auto6">
+      <div class="a6"><div class="a6n">Step 01</div><div class="a6t">입력 데이터 수신</div><ul><li>MPS 수요계획</li><li>재고 현황</li><li>자재 가용 현황</li><li>설비 가용 일정</li><li>인력 현황</li></ul></div>
+      <div class="a6"><div class="a6n">Step 02</div><div class="a6t">제약 조건 분석</div><ul><li>S/T 기반 가능량</li><li>설비 능력 한계</li><li>인원 제약</li><li>자재 납기 제약</li><li>납기 우선순위</li></ul></div>
+      <div class="a6"><div class="a6n">Step 03</div><div class="a6t">AI 최적화 엔진</div><ul><li>기종변경 최소화</li><li>라인 부하 균등화</li><li>납기 준수 최대화</li><li>인원 효율 최적화</li><li>잉여시간 최소화</li></ul></div>
+      <div class="a6"><div class="a6n">Step 04</div><div class="a6t">종합 생산계획 수립</div><ul><li>전체 생산 물량 배분</li><li>라인별 부하 산출</li><li>납기 일정 확정</li><li>이상 Alert 생성</li><li>종합 계획서 초안</li></ul></div>
+      <div class="a6"><div class="a6n">Step 05</div><div class="a6t">검토·승인 → 종합 배포</div><ul><li>담당자 확인</li><li>Gap 분석 리포트</li><li>수정 요청 처리</li><li>최종 확정 승인</li><li>관련 부서 배포</li></ul></div>
+      <div class="a6"><div class="a6n">Step 06</div><div class="a6t">공정별 계획 도출 → W/Order</div><ul><li>수삽 공정별 계획표</li><li>조립 공정별 계획표</li><li>SMD 공정별 계획표</li><li>IMT 공정별 계획표</li><li>W/Order 자동 발행</li></ul></div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ══════════════════ PROMPT ══════════════════ -->
+<div class="page" id="prompt">
+  <div class="sec-header">
+    <div class="sec-eyebrow">AI Prompt · 실사용 예시</div>
+    <h2>생산계획 수립 프롬프트 — 실제 사용 수준</h2>
+    <p>아래 형식에 실제 데이터를 채워 LLM에 입력하면 즉시 사용 가능한 수준으로 작성</p>
+  </div>
+
+  <div class="prompt-wrap">
+    <div class="prompt-label">Production Plan Prompt · v1.0</div>
+    <pre>
+<span class="pl">##############################################</span>
+<span class="pl">##  생산계획 수립 AI 프롬프트 — SMD 라인용  ##</span>
+<span class="pl">##############################################</span>
+
+<span class="pk">당신은 제조 현장 생산계획 전문가 AI입니다.</span>
+<span class="pk">아래 제공된 실제 현장 데이터를 기반으로</span>
+<span class="pk">SMD-LINE-01의 주간 생산계획을 수립하세요.</span>
+<span class="pk">계획 수립 시 모든 제약 조건을 반드시 준수해야 합니다.</span>
+
+<span class="ph">────────────────────────────────────────────</span>
+<span class="phl">■ 1. 기본 운영 조건</span>
+<span class="ph">────────────────────────────────────────────</span>
+
+<span class="pp">라인명:</span>         <span class="pv">SMD-LINE-01</span>
+<span class="pp">계획 기간:</span>      <span class="pv">2026-04-07 (월) ~ 2026-04-11 (금)</span>
+<span class="pp">근무 형태:</span>      <span class="pv">2교대 (주간 08:00~20:00 / 야간 20:00~08:00)</span>
+<span class="pp">총 가용 시간:</span>   <span class="pv">주간 12h / 야간 12h (1일 24h)</span>
+<span class="pp">잉여시간 비율:</span>  <span class="pv">12.5% → 실 유효 가동시간 = 21h/일</span>
+<span class="pp">순간정지 보정:</span>  <span class="pv">4.8% → 가용률 계수 0.952 적용</span>
+<span class="pp">→ 실 계획 가능시간:</span> <span class="pn">21h × 0.952 = 19.99h ≈ 20h/일</span>
+
+<span class="ph">────────────────────────────────────────────</span>
+<span class="phl">■ 2. 이번 주 생산 요청 목록</span>
+<span class="ph">────────────────────────────────────────────</span>
+
+<span class="pp">| 품번     | 품명          | 요청수량 | 납기    | 우선순위 | 비고             |</span>
+<span class="pp">|----------|---------------|---------|---------|---------|-----------------|</span>
+<span class="pv">| PBA-001  | 메인보드 A형   | 850 ea  | 04/09  |    1    | 최우선 처리       |</span>
+<span class="pv">| PBA-002  | 전원보드 B형   | 1,200 ea| 04/11  |    2    |                  |</span>
+<span class="pv">| PBA-003  | 제어보드 C형   | 600 ea  | 04/10  |    3    | 자재 04/08 입고  |</span>
+<span class="pv">| PBA-004  | 센서보드 D형   | 400 ea  | 04/11  |    4    | 공용 자재 사용   |</span>
+
+<span class="ph">────────────────────────────────────────────</span>
+<span class="phl">■ 3. S/T (표준시간) 데이터</span>
+<span class="ph">────────────────────────────────────────────</span>
+
+<span class="pp">| 품번     | 설계 S/T | 실적 S/T(3개월 평균) | 적용 S/T | 비고            |</span>
+<span class="pp">|----------|---------|-------------------|---------|----------------|</span>
+<span class="pv">| PBA-001  |  42초   |       45초         |  45초   | 실적 기준 적용  |</span>
+<span class="pv">| PBA-002  |  36초   |       38초         |  38초   | 실적 기준 적용  |</span>
+<span class="pv">| PBA-003  |  58초   |       62초         |  62초   | 복잡도 높음    |</span>
+<span class="pv">| PBA-004  |  31초   |       33초         |  33초   |                |</span>
+
+<span class="pc">→ 적용 S/T = 실적 S/T × 작업자 수준 계수</span>
+
+<span class="ph">────────────────────────────────────────────</span>
+<span class="phl">■ 4. 작업자 구성 및 수준</span>
+<span class="ph">────────────────────────────────────────────</span>
+
+<span class="pp">주간조:</span>  <span class="pv">S급 2명 (계수 1.15), A급 3명 (계수 1.02), B급 1명 (계수 0.88)</span>
+<span class="pp">야간조:</span>  <span class="pv">A급 2명 (계수 1.02), B급 2명 (계수 0.88)</span>
+
+<span class="pp">주간 가중 평균 계수:</span> <span class="pn">(2×1.15 + 3×1.02 + 1×0.88) / 6 = 1.023</span>
+<span class="pp">야간 가중 평균 계수:</span> <span class="pn">(2×1.02 + 2×0.88) / 4 = 0.950</span>
+
+<span class="pc">→ 야간조는 주간 대비 약 7% 생산성 낮음을 계획에 반영</span>
+
+<span class="ph">────────────────────────────────────────────</span>
+<span class="phl">■ 5. 기종변경 시간 Matrix (분)</span>
+<span class="ph">────────────────────────────────────────────</span>
+
+<span class="pp">| →        | PBA-001 | PBA-002 | PBA-003 | PBA-004 |</span>
+<span class="pp">|----------|---------|---------|---------|---------|</span>
+<span class="pv">| PBA-001  |    —    |   35분  |   52분  |   28분  |</span>
+<span class="pv">| PBA-002  |   35분  |    —    |   28분  |   20분  |</span>
+<span class="pv">| PBA-003  |   52분  |   28분  |    —    |   35분  |</span>
+<span class="pv">| PBA-004  |   28분  |   20분  |   35분  |    —    |</span>
+
+<span class="ph">────────────────────────────────────────────</span>
+<span class="phl">■ 6. 제약 조건 (반드시 준수)</span>
+<span class="ph">────────────────────────────────────────────</span>
+
+<span class="pv">1. PBA-003은 자재 입고 전(04/08 이전) 착수 불가</span>
+<span class="pv">2. 04/08(화) 주간: 설비 PM → SMD-01호기 2시간 정지 (10:00~12:00)</span>
+<span class="pv">3. 04/10(목) 야간: 작업자 1명 연차 → 야간 인원 3명</span>
+<span class="pv">4. PBA-001은 04/09 18:00까지 전량 완료 필수 (출하 예정)</span>
+<span class="pv">5. 동일 교대 내 기종변경은 최대 2회 이하 권장</span>
+
+<span class="ph">────────────────────────────────────────────</span>
+<span class="phl">■ 7. 출력 요청 형식</span>
+<span class="ph">────────────────────────────────────────────</span>
+
+<span class="pk">[출력 1] 일별·교대별 생산 계획표</span>
+<span class="pp">| 날짜 | 교대 | 품번 | 계획수량 | 시작시간 | 종료시간 | 기종변경 여부 |</span>
+
+<span class="pk">[출력 2] 기종변경 최적 시퀀스 및 선택 근거</span>
+<span class="pp">총 기종변경 횟수, 총 변경 손실 시간, 최적 순서와 이유</span>
+
+<span class="pk">[출력 3] 납기 달성 가능 여부 판단 (품번별)</span>
+<span class="pp">| 품번 | 계획 완료일시 | 납기일 | 달성 가능 여부 | 리스크 메모 |</span>
+
+<span class="pk">[출력 4] 능력 분석</span>
+<span class="pp">총 필요 시간 vs 가용 시간 비교, 초과/부족 여부</span>
+
+<span class="pk">[출력 5] 리스크 및 권고 사항</span>
+<span class="pp">주요 리스크 3개 이상 도출 + 각 리스크별 대응 방안 제시</span>
+
+<span class="ph">────────────────────────────────────────────</span>
+<span class="pl">## 주의사항: 계획 수립 시 모든 제약 조건을 우선 적용하고,</span>
+<span class="pl">## 납기 준수율을 최우선으로, 기종변경 손실 최소화를 차우선으로 한다.</span>
+<span class="pl">## 불가능한 항목은 명확히 이유와 함께 알려라.</span>
+<span class="ph">────────────────────────────────────────────</span>
+    </pre>
+  </div>
+
+  <div class="note mt24">
+    <strong>프롬프트 활용 팁 (PM 관점)</strong>
+    위 프롬프트는 템플릿. 실제 사용 시 [대괄호] 또는 {중괄호} 값만 교체하면 즉시 사용 가능. 처음엔 GPT-4o 또는 Claude에 직접 붙여넣기로 테스트 → 결과 검증 → 반복 개선. 완성도가 높아지면 Python으로 자동화해 ERP 데이터를 자동으로 프롬프트에 삽입하는 파이프라인 구축.
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ══════════════════ PHASE 6: 파일럿 ══════════════════ -->
+<div class="page" id="phase6">
+  <div class="sec-header">
+    <div class="sec-eyebrow">Phase 6 · W7–8</div>
+    <h2>파일럿 운영 &amp; Go-Live</h2>
+    <p>1개 라인으로 시작, 검증 후 전체 확대. 완벽하지 않아도 시작한다.</p>
+  </div>
+
+  <div class="ig2 mb24">
+    <div class="fc-sm">
+      <div style="font-size:13px;font-weight:700;color:var(--g90);margin-bottom:14px;">파일럿 운영 방식</div>
+      <div class="ibox">
+        <div class="ibox-title">단계별 적용 전략</div>
+        <ul>
+          <li><strong>Week 7:</strong> 가장 단순한 라인 1개 선정해 파일럿 시작</li>
+          <li>AI 계획 vs 기존 계획 병행 운영 (2트랙)</li>
+          <li>매일 실적 비교 — AI 계획 정확도 측정</li>
+          <li>오류 발견 즉시 프롬프트·로직 수정 (Agile)</li>
+          <li><strong>Week 8:</strong> 검증 완료 후 전체 4개 라인 순차 배포</li>
+          <li>배포 후 2주간 담당자 수동 검수 병행 유지</li>
+        </ul>
+      </div>
+    </div>
+    <div class="fc-sm">
+      <div style="font-size:13px;font-weight:700;color:var(--g90);margin-bottom:14px;">KPI 측정 항목</div>
+      <div class="ibox">
+        <div class="ibox-title">Go-Live 후 즉시 측정</div>
+        <ul>
+          <li>계획 수립 소요 시간 (Before vs After)</li>
+          <li>W/Order 오류 발생 건수 비교</li>
+          <li>납기 준수율 변화 (주간 단위)</li>
+          <li>기종변경 횟수 및 손실 시간 변화</li>
+          <li>담당자 만족도 (체감 업무 편의성)</li>
+          <li>AI 계획 수동 수정률 (낮을수록 좋음)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 체크리스트 -->
+  <div class="sec-header mt32">
+    <div class="sec-eyebrow">Checklist</div>
+    <h2>전체 사전 조사 체크리스트</h2>
+    <p>지금 당장 시작해야 할 확인 항목</p>
+  </div>
+
+  <div class="check-grid mb32">
+    <div class="check-card">
+      <div class="check-title">데이터 &amp; 문서 확보</div>
+      <div class="chk"><div class="chk-box"></div>전체 SOP 파일 목록 및 원본 수집</div>
+      <div class="chk"><div class="chk-box"></div>현행 Master 파일 (품목·BOM·업체·설비)</div>
+      <div class="chk"><div class="chk-box"></div>최근 1년 생산 실적 데이터 (일별)</div>
+      <div class="chk"><div class="chk-box"></div>S/T 등록 현황 파일 (IE팀 자료)</div>
+      <div class="chk"><div class="chk-box"></div>작업자 인원 현황 및 등급 현황</div>
+      <div class="chk"><div class="chk-box"></div>기종변경 이력 및 소요시간 실적</div>
+      <div class="chk"><div class="chk-box"></div>순간정지 이력 (MES 로그 or 수기)</div>
+      <div class="chk"><div class="chk-box"></div>사무 담당자 작성 계획 Excel 원본 수집</div>
+    </div>
+    <div class="check-card">
+      <div class="check-title">시스템 &amp; 인프라</div>
+      <div class="chk"><div class="chk-box"></div>ERP 시스템 종류·버전·데이터 추출 방법</div>
+      <div class="chk"><div class="chk-box"></div>MES 도입 여부 및 수집 항목 목록</div>
+      <div class="chk"><div class="chk-box"></div>ERP↔MES 인터페이스 현황</div>
+      <div class="chk"><div class="chk-box"></div>외부 AI (GPT/Claude) 데이터 전송 보안 검토</div>
+      <div class="chk"><div class="chk-box"></div>Python 개발 환경 구축 가능 여부</div>
+      <div class="chk"><div class="chk-box"></div>현장 Wi-Fi 및 태블릿 보급 현황</div>
+      <div class="chk"><div class="chk-box"></div>API 개발 가능 여부 (IT팀 확인)</div>
+      <div class="chk"><div class="chk-box"></div>LLM API 비용 예산 확인</div>
+    </div>
+    <div class="check-card">
+      <div class="check-title">조직 &amp; 프로세스</div>
+      <div class="chk"><div class="chk-box"></div>생산계획 담당자 인원 및 역할 파악</div>
+      <div class="chk"><div class="chk-box"></div>W/Order 승인 체계 및 결재 라인</div>
+      <div class="chk"><div class="chk-box"></div>납기 우선순위 결정 기준 및 권한자</div>
+      <div class="chk"><div class="chk-box"></div>부서 간 협조 체계 (영업·구매·생산)</div>
+      <div class="chk"><div class="chk-box"></div>예외 상황 처리 프로세스 (긴급 오더 등)</div>
+      <div class="chk"><div class="chk-box"></div>경영층 보고 및 프로젝트 공식 승인</div>
+      <div class="chk"><div class="chk-box"></div>파일럿 대상 라인 선정 완료</div>
+      <div class="chk"><div class="chk-box"></div>현장 담당자 협조 동의 확보</div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ══════════════════ 즉시 액션 ══════════════════ -->
+<div class="page">
+  <div class="sec-header">
+    <div class="sec-eyebrow">Immediate Action</div>
+    <h2>지금 당장 해야 할 것</h2>
+    <p>이번 주 안에 반드시 시작해야 2개월 일정 준수 가능</p>
+  </div>
+
+  <div class="action-grid mb24">
+    <div class="action-card">
+      <div class="action-title">이번 주 내 (최우선)</div>
+      <div class="action-item">
+        <span class="atag p1">P1</span>
+        <div><strong>사무 담당자 미팅 잡기</strong><br>실제 계획 수립 과정 옆에서 관찰 시작. 현재 Excel 파일 원본 수령.</div>
+      </div>
+      <div class="action-item">
+        <span class="atag p1">P1</span>
+        <div><strong>ERP/MES 데이터 추출 가능 항목 확인</strong><br>IT팀 또는 ERP 담당자와 미팅. 어떤 데이터를 뽑을 수 있는지 목록화.</div>
+      </div>
+      <div class="action-item">
+        <span class="atag p1">P1</span>
+        <div><strong>SOP 파일 전수 목록 작성 시작</strong><br>부서별 SOP 보유 현황 취합. 파일 형식 및 최신 버전 확인.</div>
+      </div>
+      <div class="action-item">
+        <span class="atag p2">P2</span>
+        <div><strong>LLM API 테스트 계정 개설</strong><br>OpenAI API 또는 Claude API. 보안 검토 후 파일럿 데이터로 즉시 테스트.</div>
+      </div>
+      <div class="action-item">
+        <span class="atag p2">P2</span>
+        <div><strong>파일럿 라인 1개 선정</strong><br>가장 단순하고 데이터가 잘 정리된 라인부터. 복잡한 라인은 나중에.</div>
+      </div>
+    </div>
+    <div class="action-card">
+      <div class="action-title">이번 달 내 (단기)</div>
+      <div class="action-item">
+        <span class="atag p1">M1</span>
+        <div><strong>공정별 S/T 직접 측정 완료</strong><br>파일럿 라인 전 공정 스톱워치 측정. 최소 30회 이상 측정해 평균 산출.</div>
+      </div>
+      <div class="action-item">
+        <span class="atag p1">M1</span>
+        <div><strong>SOP 코드 체계 설계서 완성</strong><br>자릿수·분류 기준·명명 규칙 확정. 이후 모든 코드의 기준이 됨.</div>
+      </div>
+      <div class="action-item">
+        <span class="atag p1">M1</span>
+        <div><strong>프롬프트 첫 버전 테스트</strong><br>실제 지난주 데이터로 프롬프트 테스트 → AI 계획 vs 실제 계획 비교.</div>
+      </div>
+      <div class="action-item">
+        <span class="atag p2">M1</span>
+        <div><strong>DB 설계 완료 및 테이블 생성</strong><br>4개 핵심 테이블 생성. Excel → DB 마이그레이션 계획 수립.</div>
+      </div>
+      <div class="action-item">
+        <span class="atag p3">M1</span>
+        <div><strong>경영층 중간 보고</strong><br>현황 + 1개월 진행 결과 + 파일럿 계획 보고. 지속 승인 확보.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <strong>생산계획 AI 접목 전 과정 로드맵</strong><br>
+  SOP → PBA 분류 → 변수 정리 → 자동 계획 수립 → W/Order 발생 · 2개월 실행 계획서<br>
+  작성일 2026년 3월 25일
+</footer>
+
+<script>
+  // 스크롤 스파이 — 현재 위치에 맞는 nav 활성화
+  const sections = [
+    { id: 'phase1', nav: 'phase1' },
+    { id: 'phase2', nav: 'phase2' },
+    { id: 'phase3', nav: 'phase3' },
+    { id: 'phase4', nav: 'phase4' },
+    { id: 'phase5', nav: 'phase5' },
+    { id: 'phase6', nav: 'phase6' },
+    { id: 'prompt', nav: 'phase5' },
+  ];
+
+  const navLinks = document.querySelectorAll('.sn-phase');
+
+  function updateNav() {
+    let current = '';
+    sections.forEach(s => {
+      const el = document.getElementById(s.id);
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        if (rect.top <= 100) current = s.nav;
+      }
+    });
+    navLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.dataset.phase === current) link.classList.add('active');
+    });
+  }
+
+  window.addEventListener('scroll', updateNav, { passive: true });
+  updateNav();
+
+  // 타임라인 태그 클릭 시 smooth scroll
+  document.querySelectorAll('.tl-tag').forEach(tag => {
+    tag.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(tag.getAttribute('href'));
+      if (target) {
+        const offset = 60;
+        const top = target.getBoundingClientRect().top + window.scrollY - offset;
+        window.scrollTo({ top, behavior: 'smooth' });
+      }
+    });
+  });
+
+  // Nav 링크 smooth scroll
+  document.querySelectorAll('.sn-phase, .sn-back').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const href = link.getAttribute('href');
+      const target = document.querySelector(href);
+      if (target) {
+        const offset = 60;
+        const top = target.getBoundingClientRect().top + window.scrollY - offset;
+        window.scrollTo({ top, behavior: 'smooth' });
+      }
+    });
+  });
+</script>
+</body>
+</html>
